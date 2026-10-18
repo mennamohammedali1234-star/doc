@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Automated Resume Screening & Ranking</title>
+  <meta name="description" content="AI & NLP powered resume screening tool to rank job applicants by cosine similarity and keyword matching.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <!-- Background Glow Effects -->
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-icon">🤖</span>
+        <div class="brand-text">
+          <h1>Automated Resume Screening</h1>
+          <p class="subtitle">AI & TF-IDF Vectorization • Cosine Similarity • Candidate Ranking</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="status-badge pulse">
+          <span class="status-dot"></span> Live Screener
+        </span>
+      </div>
+    </header>
+
+    <!-- Presets bar -->
+    <div class="presets-section">
+      <span class="preset-label">⚡ Quick Presets / أمثلة جاهزة:</span>
+      <div class="preset-buttons" id="presetButtons">
+        <button type="button" class="preset-btn" id="presetBtnDE" onclick="loadPreset('data-engineer')">
+          📊 Data Engineer (Spark/ETL)
+        </button>
+        <button type="button" class="preset-btn" id="presetBtnML" onclick="loadPreset('ml-python')">
+          🐍 Python & Machine Learning
+        </button>
+        <button type="button" class="preset-btn" id="presetBtnReact" onclick="loadPreset('frontend-react')">
+          ⚛️ Frontend React Developer
+        </button>
+        <button type="button" class="preset-btn secondary" id="presetBtnClear" onclick="clearAll()">
+          🧹 Clear All
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Workspace Grid -->
+    <main class="workspace-grid">
+      <!-- Left Column: Input Forms -->
+      <section class="card input-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="step-num">1</span>
+            <h2>Job Description</h2>
+          </div>
+          <span class="tooltip">الوصف الوظيفي والمؤهلات</span>
+        </div>
+        <div class="card-body">
+          <label for="jobDescription" class="field-label">
+            Target Job Requirements & Skills
+          </label>
+          <textarea 
+            id="jobDescription" 
+            class="textarea-custom" 
+            rows="6" 
+            placeholder="Paste or write job description here (e.g. Python, scikit-learn, SQL, REST APIs, Git...)"
+          ></textarea>
+        </div>
+
+        <div class="card-divider"></div>
+
+        <div class="card-header">
+          <div class="card-title">
+            <span class="step-num">2</span>
+            <h2>Candidate Resumes</h2>
+          </div>
+          <div class="tab-switch">
+            <button class="tab-btn active" id="tabTextBtn" onclick="switchCandidateTab('text')">Text Input</button>
+            <button class="tab-btn" id="tabUploadBtn" onclick="switchCandidateTab('upload')">Upload Files (.pdf, .docx, .txt)</button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <!-- Text Candidates Mode -->
+          <div id="tabTextContent" class="tab-pane active">
+            <div id="candidatesList" class="candidates-list">
+              <!-- Dynamically populated candidate items -->
+            </div>
+            <button type="button" class="btn-add-candidate" id="btnAddCandidate" onclick="addCandidateRow()">
+              <span>+</span> Add Another Candidate
+            </button>
+          </div>
+
+          <!-- File Upload Mode -->
+          <div id="tabUploadContent" class="tab-pane">
+            <div class="upload-dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+              <input type="file" id="fileInput" multiple accept=".pdf,.docx,.txt" style="display:none;" onchange="handleFileSelect(event)">
+              <div class="dropzone-content">
+                <span class="upload-icon">📁</span>
+                <p class="dropzone-text"><strong>Click to browse</strong> or drag & drop resume files</p>
+                <span class="dropzone-hint">Supports PDF, Word (.docx), and Plain Text (.txt)</span>
+              </div>
+            </div>
+            <div id="selectedFilesList" class="files-preview-list"></div>
+          </div>
+
+          <!-- Screen Action Button -->
+          <div class="action-bar">
+            <button type="button" class="btn-primary" id="btnRunScreening" onclick="runScreening()">
+              <span class="btn-icon">⚡</span>
+              <span class="btn-text">Screen & Rank Resumes</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Results Dashboard -->
+      <section class="card results-card" id="resultsSection">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="step-num">3</span>
+            <h2>Screening Results & Leaderboard</h2>
+          </div>
+          <div id="resultsMeta" class="results-meta"></div>
+        </div>
+
+        <div class="card-body">
+          <!-- Loading State -->
+          <div id="loadingState" class="state-container" style="display: none;">
+            <div class="spinner"></div>
+            <p>Analyzing resumes with TF-IDF Vectorizer & Cosine Similarity...</p>
+          </div>
+
+          <!-- Empty State -->
+          <div id="emptyState" class="state-container">
+            <div class="empty-graphic">🎯</div>
+            <h3>No Screening Results Yet</h3>
+            <p>Select a preset above or input candidate resumes, then click <strong>"Screen & Rank Resumes"</strong> to see rankings and score breakdowns.</p>
+          </div>
+
+          <!-- Results Container -->
+          <div id="resultsContainer" style="display: none;">
+            <!-- Top Winner Showcase Banner -->
+            <div class="winner-banner" id="winnerBanner">
+              <div class="winner-trophy">🏆</div>
+              <div class="winner-info">
+                <span class="winner-label">TOP MATCH CANDIDATE</span>
+                <h3 class="winner-name" id="winnerName">Candidate Name</h3>
+                <span class="winner-score" id="winnerScore">92.5% Match</span>
+              </div>
+            </div>
+
+            <!-- Ranked Candidates List -->
+            <div class="rank-list" id="rankList">
+              <!-- Rendered rank cards -->
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
